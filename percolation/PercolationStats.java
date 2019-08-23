@@ -10,9 +10,11 @@ import edu.princeton.cs.algs4.StdRandom;
 import edu.princeton.cs.algs4.StdStats;
 
 public class PercolationStats {
-    private double mean;
-    private double stddev;
-    private int trials;
+    private final double mean;
+    private final double stddev;
+    private final int trials;
+
+    private final double confidenceConstant = 1.96;
 
     // perform independent trials on an n-by-n grid
     public PercolationStats(int n, int trials) {
@@ -23,16 +25,18 @@ public class PercolationStats {
         this.trials = trials;
         int numberOfCells = n * n;
         double[] thresholds = new double[trials];
-        for (int i = 0; i < trials; i++) {
+        for (int t = 0; t < trials; t++) {
             Percolation percolation = new Percolation(n);
 
-            for (int cell = 0; cell < numberOfCells; cell++) {
-                int randomCellRow = StdRandom.uniform(n);
-                int randomCellCol = StdRandom.uniform(n);
+            int[] perm = StdRandom.permutation(numberOfCells);
+            for (int i = 0; i < numberOfCells; i++) {
+                int ufIndex = perm[i] + 1;
+                int randomCellRow = (ufIndex / (n + 1)) + 1;
+                int randomCellCol = ((ufIndex - 1) % n) + 1;
 
                 percolation.open(randomCellRow, randomCellCol);
                 if (percolation.percolates()) {
-                    thresholds[i] = (cell + 1) / (double) numberOfCells;
+                    thresholds[t] = percolation.numberOfOpenSites() / (double) numberOfCells;
                     break;
                 }
             }
@@ -54,20 +58,20 @@ public class PercolationStats {
 
     // low endpoint of 95% confidence interval
     public double confidenceLo() {
-        return mean - (1.96d * stddev) / Math.sqrt(trials);
+        return mean - (confidenceConstant * stddev) / Math.sqrt(trials);
     }
 
     // high endpoint of 95% confidence interval
     public double confidenceHi() {
-        return mean + (1.96d * stddev) / Math.sqrt(trials);
+        return mean + (confidenceConstant * stddev) / Math.sqrt(trials);
     }
 
     // test client (see below)
     public static void main(String[] args) {
         int n = Integer.parseInt(args[0]);
-        int T = Integer.parseInt((args[1]));
+        int trials = Integer.parseInt((args[1]));
 
-        PercolationStats stats = new PercolationStats(n, T);
+        PercolationStats stats = new PercolationStats(n, trials);
 
         StdOut.printf("mean = %f\n", stats.mean());
         StdOut.printf("stddev = %f\n", stats.stddev());

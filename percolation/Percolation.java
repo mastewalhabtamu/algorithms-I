@@ -7,16 +7,22 @@
 import edu.princeton.cs.algs4.WeightedQuickUnionUF;
 
 public class Percolation {
-    public int n;
-    public int numberOfOpenCells;
-    public WeightedQuickUnionUF uf;
-    public boolean[] openCells;
+    private final int n;
+    private int numberOfOpenCells;
+    private final WeightedQuickUnionUF uf;
+    private final WeightedQuickUnionUF fullUf;  // for full checking
+    private boolean[] openCells;
+    private boolean[] backerCells;  // will backwash
 
     // creates n-by-n grid, with all sites initially blocked
     public Percolation(int n) {
+        if (n <= 0) {
+            throw new IllegalArgumentException("n for grid can't be negative");
+        }
         this.n = n;
         this.numberOfOpenCells = 0;
         this.uf = new WeightedQuickUnionUF(n * n + 2);
+        this.fullUf = new WeightedQuickUnionUF(n * n + 2);
         this.openCells = new boolean[n * n + 2];
 
         int topVirtualIndex = 0;
@@ -27,61 +33,82 @@ public class Percolation {
         for (int i = 1; i <= n; i++) {
             uf.union(topVirtualIndex, i);   // connect top row cells with virtual top cell
             uf.union(bottomVirtualIndex, bottomVirtualIndex - i);
+
+            fullUf.union(topVirtualIndex, i);
         }
     }
 
-    private void checkIndexes(int row, int col) {
-        if ((row < 0) || (row > this.n) || (col < 0) || (col > this.n)) {
-            throw new IllegalArgumentException("row or col number out of range");
+    private int zeroIndex(int gridIndex) {
+        if ((gridIndex <= 0) || (gridIndex > this.n)) {
+            throw new IllegalArgumentException("Grid index out of range");
         }
+
+        return gridIndex - 1;
     }
 
-    private void unionOpenNeighbours(int row, int col) {
-        int cellIndex = row * n + col + 1;
+    private int getUFIndex(int rowIndex, int colIndex) {
+        return rowIndex * n + colIndex + 1;
+    }
 
-        int topNeighbour = cellIndex - this.n;
-        if (topNeighbour > 0 && this.openCells[topNeighbour]) {
-            uf.union(topNeighbour, cellIndex);
+    private int getLastUFIndex() {
+        return n * n + 1;
+    }
+
+    private void unionOpenNeighbours(int rowIndex, int colIndex) {
+        int ufIndex = getUFIndex(rowIndex, colIndex);
+
+        int topNeighbour = ufIndex - n;
+        if (topNeighbour > 0 && openCells[topNeighbour]) {
+            uf.union(topNeighbour, ufIndex);
+            fullUf.union(topNeighbour, ufIndex);
         }
 
-        int bottomNeighbour = cellIndex + this.n;
-        if (bottomNeighbour < n * n + 1 && this.openCells[bottomNeighbour]) {
-            uf.union(bottomNeighbour, cellIndex);
+        int bottomNeighbour = ufIndex + n;
+        if (bottomNeighbour < getLastUFIndex() && openCells[bottomNeighbour]) {
+            uf.union(bottomNeighbour, ufIndex);
         }
 
-        int leftNeighbour = cellIndex - 1;
+        int leftNeighbour = ufIndex - 1;
         if (leftNeighbour % n != 0 && openCells[leftNeighbour]) {
-            uf.union(leftNeighbour, cellIndex);
+            uf.union(leftNeighbour, ufIndex);
+            fullUf.union(leftNeighbour, ufIndex);
         }
 
-        int rightNeighbour = cellIndex + 1;
-        if (cellIndex % n != 0 && openCells[rightNeighbour]) {
-            uf.union(rightNeighbour, cellIndex);
+        int rightNeighbour = ufIndex + 1;
+        if (ufIndex % n != 0 && openCells[rightNeighbour]) {
+            uf.union(rightNeighbour, ufIndex);
+            fullUf.union(rightNeighbour, ufIndex);
         }
     }
 
     // opens the site (row, col) if it is not open already
     public void open(int row, int col) {
-        checkIndexes(row, col);
+        if (isOpen(row, col)) return;
 
-        this.openCells[row * n + col + 1] = true;
+        int rowIndex = zeroIndex(row);
+        int colIndex = zeroIndex(col);
+
+        this.openCells[getUFIndex(rowIndex, colIndex)] = true;
         this.numberOfOpenCells += 1;
 
-        this.unionOpenNeighbours(row, col);
+        this.unionOpenNeighbours(rowIndex, colIndex);
     }
 
     // is the site (row, col) open?
     public boolean isOpen(int row, int col) {
-        checkIndexes(row, col);
+        int rowIndex = zeroIndex(row);
+        int colIndex = zeroIndex(col);
 
-        return this.openCells[row * n + col + 1];
+        return openCells[getUFIndex(rowIndex, colIndex)];
     }
 
     // is the site (row, col) full?
     public boolean isFull(int row, int col) {
-        checkIndexes(row, col);
+        int rowIndex = zeroIndex(row);
+        int colIndex = zeroIndex(col);
+        int ufIndex = getUFIndex(rowIndex, colIndex);
 
-        return uf.connected(0, row * n + col + 1);
+        return openCells[ufIndex] && fullUf.connected(0, ufIndex);
     }
 
     // returns the number of open sites
@@ -91,11 +118,11 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        return uf.connected(0, n * n + 1);
+        return numberOfOpenCells > 0 && uf.connected(0, getLastUFIndex());
     }
 
     // test client (optional)
     public static void main(String[] args) {
-
+        /* empty body */
     }
 }
