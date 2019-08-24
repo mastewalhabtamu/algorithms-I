@@ -10,9 +10,10 @@ public class Percolation {
     private final int n;
     private int numberOfOpenCells;
     private final WeightedQuickUnionUF uf;
-    private final WeightedQuickUnionUF fullUf;  // for full checking
+    private final WeightedQuickUnionUF fullUf;  // for full checking no backwash
     private boolean[] openCells;
-    private boolean[] backerCells;  // will backwash
+
+    private int lastUfIndex;
 
     // creates n-by-n grid, with all sites initially blocked
     public Percolation(int n) {
@@ -22,17 +23,17 @@ public class Percolation {
         this.n = n;
         this.numberOfOpenCells = 0;
         this.uf = new WeightedQuickUnionUF(n * n + 2);
-        this.fullUf = new WeightedQuickUnionUF(n * n + 2);
+        this.fullUf = new WeightedQuickUnionUF(n * n + 1);
         this.openCells = new boolean[n * n + 2];
 
         int topVirtualIndex = 0;
-        int bottomVirtualIndex = n * n + 1;
+        lastUfIndex = n * n + 1;
         this.openCells[topVirtualIndex] = true;   // virtual top cell
-        this.openCells[bottomVirtualIndex] = true;   // virtual bottom cell
+        this.openCells[lastUfIndex] = true;   // virtual bottom cell
 
         for (int i = 1; i <= n; i++) {
             uf.union(topVirtualIndex, i);   // connect top row cells with virtual top cell
-            uf.union(bottomVirtualIndex, bottomVirtualIndex - i);
+            uf.union(lastUfIndex, lastUfIndex - i);
 
             fullUf.union(topVirtualIndex, i);
         }
@@ -50,10 +51,6 @@ public class Percolation {
         return rowIndex * n + colIndex + 1;
     }
 
-    private int getLastUFIndex() {
-        return n * n + 1;
-    }
-
     private void unionOpenNeighbours(int rowIndex, int colIndex) {
         int ufIndex = getUFIndex(rowIndex, colIndex);
 
@@ -64,8 +61,9 @@ public class Percolation {
         }
 
         int bottomNeighbour = ufIndex + n;
-        if (bottomNeighbour < getLastUFIndex() && openCells[bottomNeighbour]) {
+        if (bottomNeighbour < lastUfIndex && openCells[bottomNeighbour]) {
             uf.union(bottomNeighbour, ufIndex);
+            fullUf.union(bottomNeighbour, ufIndex);
         }
 
         int leftNeighbour = ufIndex - 1;
@@ -118,7 +116,7 @@ public class Percolation {
 
     // does the system percolate?
     public boolean percolates() {
-        return numberOfOpenCells > 0 && uf.connected(0, getLastUFIndex());
+        return numberOfOpenCells > 0 && uf.connected(0, lastUfIndex);
     }
 
     // test client (optional)
