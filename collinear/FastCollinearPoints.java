@@ -27,31 +27,38 @@ public class FastCollinearPoints {
     }
 
     public FastCollinearPoints(Point[] points) {
-        validateNulls(points);
+        Point[] clonedPoints = points.clone();
+        validateNulls(clonedPoints);
 
-        Arrays.sort(points);
-        validateDuplicates(points);
+        Arrays.sort(clonedPoints);
+        validateDuplicates(clonedPoints);
 
         List<LineSegment> lineSegments = new LinkedList<>();
 
-        int n = points.length;
-        double[] slopes = new double[n];
+        int n = clonedPoints.length;
+        Point[] otherPoints = new Point[n - 1];
         for (int i = 0; i < n; i++) {
-            Arrays.sort(points, points[i].slopeOrder());
+            for (int other = 0; other < n - 1; other++) {
+                if (i != other) {
+                    otherPoints[other] = points[i];
+                }
+            }
+            Arrays.sort(otherPoints, clonedPoints[i].slopeOrder());
 
             int collinearStart = 0;
             int collinearEnd = 0;
-            for (int j = 0; j < n - 1; j++) {
-                if (points[i].slopeTo(points[j]) == points[i].slopeTo(points[j + 1])) {
+            for (int other = 0; other < n - 1; other++) {
+                if (clonedPoints[i].slopeTo(otherPoints[other]) == clonedPoints[i]
+                        .slopeTo(otherPoints[other + 1])) {
                     collinearEnd += 1;
                 }
                 else {
-                    if (collinearEnd - collinearStart >= 4) {
-                        lineSegments.add(new LineSegment(points[collinearStart],
-                                                         points[collinearEnd]));
+                    if (collinearEnd - collinearStart >= 3) {
+                        lineSegments.add(new LineSegment(otherPoints[collinearStart],
+                                                         otherPoints[collinearEnd]));
                     }
-                    collinearStart = j + 1;
-                    collinearEnd = j + 1;
+                    collinearStart = other + 1;
+                    collinearEnd = other + 1;
                 }
             }
         }

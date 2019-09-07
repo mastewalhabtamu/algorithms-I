@@ -27,30 +27,32 @@ public class BruteCollinearPoints {
     }
 
     public BruteCollinearPoints(Point[] points) {
-        validateNulls(points);
+        Point[] clonedPoints = points.clone();
+        validateNulls(clonedPoints);
 
-        Arrays.sort(points);
-        validateDuplicates(points);
+        Arrays.sort(clonedPoints);
+        validateDuplicates(clonedPoints);
 
-        int n = points.length;
+        int n = clonedPoints.length;
         List<LineSegment> lineSegments = new LinkedList<>();
         for (int a = 0; a < n - 3; a++) {
-            Point pointA = points[a];
+            Point pointA = clonedPoints[a];
 
             for (int b = a + 1; b < n - 2; b++) {
-                Point pointB = points[b];
+                Point pointB = clonedPoints[b];
                 double slopeAB = pointA.slopeTo(pointB);
 
                 for (int c = b + 1; c < n - 1; c++) {
-                    Point pointC = points[c];
+                    Point pointC = clonedPoints[c];
                     double slopeAC = pointA.slopeTo(pointC);
 
                     if (slopeAB == slopeAC) {
                         for (int d = c + 1; d < n; d++) {
-                            Point pointD = points[d];
+                            Point pointD = clonedPoints[d];
                             double slopeAD = pointA.slopeTo(pointD);
 
                             if (slopeAB == slopeAD) {
+
                                 lineSegments.add(new LineSegment(pointA, pointD));
                             }
                         }
