@@ -9,26 +9,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class BruteCollinearPoints {
-    private LineSegment[] segments;
-
-    private void validateNulls(Point[] points) {
-        if (points == null) throw new IllegalArgumentException();
-        for (Point p : points) {
-            if (p == null) throw new IllegalArgumentException();
-        }
-    }
-
-    private void validateDuplicates(Point[] points) {
-        int limit = points.length - 1;
-        for (int i = 0; i < limit; i++) {
-            if (points[i].compareTo(points[i + 1]) == 0)
-                throw new IllegalArgumentException();
-        }
-    }
+    private final LineSegment[] segments;
 
     public BruteCollinearPoints(Point[] points) {
+        validateNulls(points);
         Point[] clonedPoints = points.clone();
-        validateNulls(clonedPoints);
 
         Arrays.sort(clonedPoints);
         validateDuplicates(clonedPoints);
@@ -46,13 +31,12 @@ public class BruteCollinearPoints {
                     Point pointC = clonedPoints[c];
                     double slopeAC = pointA.slopeTo(pointC);
 
-                    if (slopeAB == slopeAC) {
+                    if (Double.compare(slopeAB, slopeAC) == 0) {
                         for (int d = c + 1; d < n; d++) {
                             Point pointD = clonedPoints[d];
                             double slopeAD = pointA.slopeTo(pointD);
 
-                            if (slopeAB == slopeAD) {
-
+                            if (Double.compare(slopeAB, slopeAD) == 0) {
                                 lineSegments.add(new LineSegment(pointA, pointD));
                             }
                         }
@@ -64,12 +48,28 @@ public class BruteCollinearPoints {
         this.segments = lineSegments.toArray(new LineSegment[0]);
     }
 
+    private void validateNulls(Point[] points) {
+        if (points == null) throw new IllegalArgumentException();
+        for (Point p : points) {
+            if (p == null) throw new IllegalArgumentException();
+        }
+    }
+
+    private void validateDuplicates(Point[] points) {
+        int limit = points.length - 1;
+        for (int i = 0; i < limit; i++) {
+            if (points[i].compareTo(points[i + 1]) == 0)
+                throw new IllegalArgumentException();
+        }
+    }
+
+
     public int numberOfSegments() {
         return segments.length;
     }
 
     public LineSegment[] segments() {
-        return segments;
+        return segments.clone();
     }
 
     public static void main(String[] args) {
